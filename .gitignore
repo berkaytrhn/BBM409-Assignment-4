@@ -1,0 +1,7 @@
+archive.zip
+
+/__pycache__/
+
+/dataset/*
+venv/
+notlar.txt
