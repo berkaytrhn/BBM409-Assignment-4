@@ -9,40 +9,48 @@ from dataloader import DataLoader
 from utils import *
 
 def main(args):
+    np.warnings.filterwarnings("ignore")
 
     data = sns.load_dataset("iris")
     
     data["species"] = LabelEncoder().fit_transform(data["species"])
-    
-    dataloader = DataLoader("./dataset")
+    BATCH_SIZE=32
+    dataloader = DataLoader("./dataset", BATCH_SIZE)
     #dataloader.preprocess()
-    #dataloader.load_images()
-
+    image_X, image_y = dataloader.load_images()
+    
+    """
     data = np.array(data)
     np.random.shuffle(data)
     X = data[:,:-1]
     y = data[:,-1].astype(int)
+    """
+
+
     # test set
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(image_X, image_y, shuffle=True, test_size=0.2)
 
     # validation set
-    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, test_size=0.2)
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, shuffle=True, test_size=0.2)
 
 
 
 
     nn = NeuralNetwork(X_train, y_train)
+    #nn = NeuralNetwork(image_X, image_y)
+
 
     if args.load_weights:
-        nn.load_weights("weights.npy")
+        nn.load_weights(["weights1.npy", "weights2.npy"])
 
 
 
     else:
-        EPOCHS = 20000
+        EPOCHS = 10000
         LEARNING_RATE = 0.0004
 
-        history = nn.fit(EPOCHS, LEARNING_RATE)
+        history = nn.fit(EPOCHS, LEARNING_RATE, validation_set=(X_valid, y_valid))
+        #history = nn.fit(EPOCHS, LEARNING_RATE)
         accuracy = history["accuracy"]
         loss = history["loss"]
         plot_graph(accuracy, "Accuracies", "Accuracy")
