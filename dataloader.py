@@ -24,14 +24,13 @@ class DataLoader:
             counter=1
             _path = os.path.join(self.path, _class)
             for image in tqdm(os.listdir(_path)):
-                """
+
                 if counter%30==0:
                     break
-                """
+
                 img_path = os.path.join(_path, image)
                 img = cv2.resize(cv2.imread(img_path, 0),(self.img_height, self.img_width))
                 img = img.flatten()/255.0
-                images.append(img)
                 labels.append(_class_index)
                 counter+=1
         images = np.array(images)
