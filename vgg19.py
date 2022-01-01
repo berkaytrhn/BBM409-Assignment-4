@@ -14,6 +14,8 @@ import os
 from torch.utils.data import DataLoader, random_split
 import math
 from time import time
+import argparse
+from tqdm import tqdm
 
 """
 class VGG19(nn.Module):
@@ -66,6 +68,25 @@ def Test(epoch, model, epochBased, testData, criterion, device):
         print('Epoch: [{}], Test Loss: {:.4f}, Accuracy: {:.2f}, Time: {:.2f} sec'.format(epoch, totalLoss / len(testData), sum(accuracy) / len(accuracy), time() - start))
     # Returning Average Testing Loss and Accuracy
     return totalLoss / len(testData), sum(accuracy) / len(accuracy)
+
+
+def predict(model, data, device, criterion):
+    total_loss = 0
+    accuracy = []
+    with torch.no_grad():
+        for i, batch in tqdm(enumerate(data)):
+            minput = batch[0].to(device)
+            target = batch[1].to(device)
+
+            moutput = model(minput)
+            loss = criterion(moutput, target)
+            total_loss += loss.item()
+            argmax = moutput.argmax(dim=1)
+            accuracy.append((target == argmax).sum().item() / target.shape[0])
+
+    _loss = total_loss / len(data)
+    _accuracy = sum(accuracy) / len(accuracy)
+    return _loss, _accuracy
 
 
 def Train(epoch, model, print_every, trainData, criterion, device, optimizer):
@@ -126,9 +147,8 @@ def epochLoop(epochNumber, model, trainData, testData, criterion, device, optimi
 
         print('\n')
 
-        if epoch % 30 == 0:
-            # SAVING MODEL TO USE IT LATER
-            torch.save(model, f"./model_epoch-30_lr-{learningRate}_batch-{batchSize}_dropout-0.45.pth")
+        # SAVING MODEL TO USE IT LATER
+        torch.save(model, f"./model.pth")
     return trainLosses, testLosses, trainAccuracies, testAccuracies
 
 def defineTransforms(IMG_SIZE):
@@ -199,9 +219,9 @@ def set_device():
     print("Using", device)
     return device
 
-def main():
-    BATCH_SIZE=32
-    IMAGE_SIZE=224
+def main(args):
+    BATCH_SIZE=128
+    IMAGE_SIZE=128
 
     EPOCHS = 50
     LEARNING_RATE = 0.001
@@ -211,15 +231,18 @@ def main():
 
     dataset = ImageFolder("dataset", transforms)
 
-    train_data, test_data = loadData(30, BATCH_SIZE, dataset)
-
-
+    train_data, test_data = loadData(20, BATCH_SIZE, dataset)
 
     device = set_device()
 
-    model, criterion, optimizer = initModel(device, LEARNING_RATE)
 
-    trainLosses, testLosses, trainAccuracies, testAccuracies = epochLoop(EPOCHS, model, train_data, test_data, criterion, device, optimizer, BATCH_SIZE, LEARNING_RATE)
+    if args.train:
+        model, criterion, optimizer = initModel(device, LEARNING_RATE)
+        trainLosses, testLosses, trainAccuracies, testAccuracies = epochLoop(EPOCHS, model, train_data, test_data, criterion, device, optimizer, BATCH_SIZE, LEARNING_RATE)
+    else:
+        model = torch.load("model.pth", map_location=device)
+        loss, accuracy = predict(model, test_data, device, criterion=nn.CrossEntropyLoss())
+        print(f"Test Accuracy -> {round(100*accuracy, 4)}")
 
 
 
@@ -227,4 +250,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--train", default=None, action="store_true")
+
+    args = parser.parse_args()
+
+    main(args)

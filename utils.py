@@ -22,3 +22,4 @@ def save_graph(root_dir, data, title, value, file_name):
     plt.savefig(os.path.join(root_dir, file_name))
     plt.clf()
     plt.cla()
+
