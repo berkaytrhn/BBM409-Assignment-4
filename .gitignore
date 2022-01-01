@@ -1,9 +1,10 @@
 archive.zip
 
 /__pycache__/
-
-/dataset/*
+/dataset/
 venv/
 notlar.txt
 
-/intuition_images/*
+/intuition_images/
+graphs/
+*.xlsx
